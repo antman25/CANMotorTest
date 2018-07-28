@@ -1,4 +1,6 @@
 #include "CANTalonSRX.h"
+#include <ros.h>
+
 
 #define LEFT_MASTER_ID    1
 #define LEFT_SLAVE_1_ID   2
@@ -40,6 +42,9 @@ void setup(void)
   
   motorLeft.SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
   motorRight.SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
+
+  motorLeft.SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
+  motorRight.SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
   
   motorLeft.SetFgain(0, F_gain);
   motorLeft_Slave1.SetFgain(0, F_gain);
@@ -57,14 +62,15 @@ void setup(void)
   motorRight.SetIgain(0, I_gain);
   motorRight.SetDgain(0, D_gain);
   
-  //motorLeft.GetParamRaw(CANTalonSRX::eProfileParamSlot_F, 0x00,0x00,0x00);
-  //motorRight.GetParamRaw(CANTalonSRX::eProfileParamSlot_F, 0x00,0x00,0x00);
+  motorLeft.GetParamRaw(CANTalonSRX::eProfileParamSlot_F, 0x00,0x00,0x00);
+  motorRight.GetParamRaw(CANTalonSRX::eProfileParamSlot_F, 0x00,0x00,0x00);
   delay(3000);
 
   
   motorRight.SetSensorPhase(true);
   
   motorLeft.SetSensorPhase(true);
+  
   motorLeft.SetMotorInvert(true);
   motorLeft_Slave1.SetMotorInvert(true);
   motorLeft_Slave2.SetMotorInvert(true);
@@ -105,8 +111,7 @@ void loop(void)
   motorRight.sendMotorEnable(true);
 
   float left_rev_s = 0.25;
-  int left_sp = 
-  2.0 * 1024* left_rev_s / 10;
+  int left_sp = 2.0 * 1024* left_rev_s / 10;
 
   float right_rev_s = 0.25;
   int right_sp = 2.0 * 1024* right_rev_s / 10;
@@ -143,6 +148,10 @@ void loop(void)
 
     Serial.print("RIGHT Sensor Pos: ");
     Serial.print(motorRight.GetSensorPos());
+    Serial.print(" Enc Pos: ");
+    Serial.print(motorRight.GetEncoderPos());
+    
+    
     Serial.print(" Sensor Vel: ");
     Serial.println(right_vel);
 
@@ -169,6 +178,8 @@ void loop(void)
 
     Serial.print("LEFT Sensor Pos: ");
     Serial.print(motorLeft.GetSensorPos());
+    Serial.print(" Enc Pos: ");
+    Serial.print(motorLeft.GetEncoderPos());
     Serial.print(" Sensor Vel: ");
     Serial.println(left_vel);
 
@@ -194,6 +205,7 @@ void loop(void)
     
 
     motorLeft.printParams();
+    motorRight.printParams();
     Serial.println("--------------------------------------");
     prev_time = millis();
   }

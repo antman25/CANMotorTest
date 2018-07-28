@@ -124,24 +124,24 @@ typedef struct __attribute__((packed)) _TALON_Status_1_General_10ms_t {
 } TALON_Status_1_General_10ms_t ;
 
 typedef struct __attribute__((packed)) _TALON_Status_2_Feedback_20ms_t {
-  unsigned SensorPositionH:8;
-  unsigned SensorPositionM:8;
-  unsigned SensorPositionL:8;
-  unsigned SensorVelocityH:8;
-  unsigned SensorVelocityL:8;
-  unsigned Current_h8:8;
-  unsigned StckyFault_RevSoftLim:1;
-  unsigned StckyFault_ForSoftLim:1;
-  unsigned StckyFault_RevLim:1;
-  unsigned StckyFault_ForLim:1;
-  unsigned StckyFault_UnderVoltage:1;
-  unsigned StckyFault_OverTemp:1;
-  unsigned Current_l2:2;
-  unsigned reserved2:4;
-  unsigned VelDiv4:1;
-  unsigned PosDiv8:1;
-  unsigned ProfileSlotSelect:1;
-  unsigned BrakeIsEnabled:1;
+  unsigned SensorPositionH:8; // 0
+  unsigned SensorPositionM:8; // 1
+  unsigned SensorPositionL:8; // 2
+  unsigned SensorVelocityH:8; // 3
+  unsigned SensorVelocityL:8; // 4
+  unsigned Current_h8:8;      // 5
+  unsigned StckyFault_RevSoftLim:1;  // 6 - 0
+  unsigned StckyFault_ForSoftLim:1;  // 6 - 1
+  unsigned StckyFault_RevLim:1;      // 6 - 2
+  unsigned StckyFault_ForLim:1;      // 6 - 3
+  unsigned StckyFault_UnderVoltage:1;// 6 - 4 
+  unsigned StckyFault_OverTemp:1;    // 6 - 5
+  unsigned Current_l2:2;             // 6 - 6 - 7
+  unsigned reserved2:4;              // 7: 0 - 3
+  unsigned VelDiv4:1;                // 7: 4
+  unsigned PosDiv8:1;                // 7: 5 
+  unsigned ProfileSlotSelect:1;      // 7: 6
+  unsigned BrakeIsEnabled:1;         // 7: 7
 } TALON_Status_2_Feedback_20ms_t ;
 
 typedef struct __attribute__((packed)) _TALON_Status_3_Enc_100ms_t {

@@ -308,7 +308,7 @@ void CANTalonSRX::Set(int mode, double demand0)
   byte d0_m8 = (byte)(idemand0 >> 0x08);
   byte d0_l8 = (byte)(idemand0);*/
   
-  int mode_4b = (int)mode & 0xf;
+  //int mode_4b = (int)mode & 0xf;
   
   /*demand.Demand0H = d0_h8;
   demand.Demand0M = d0_m8;
@@ -583,12 +583,17 @@ void CANTalonSRX::update(CAN_message_t *inmsg)
       memcpy(&status2, msg.buf, msg.len);
       status2_period = millis() - status2_timestamp;
       status2_timestamp = millis();
+      //printCAN(msg);
     }
     else if (msg.id == (STATUS_3 | deviceNumber))
     {
       memcpy(&status3, msg.buf, msg.len);
       status3_period = millis() - status3_timestamp;
       status3_timestamp = millis();
+      /*Serial.print("A: ");
+      Serial.print(status3.QuadApin);
+      Serial.print(" B: ");
+      Serial.println(status3.QuadBpin);*/
     }
     else if (msg.id == (STATUS_4 | deviceNumber))
     {
