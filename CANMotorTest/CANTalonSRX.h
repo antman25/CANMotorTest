@@ -169,6 +169,27 @@ class CANTalonSRX
     double GetTemp();
     double GetBatteryV();
     int getSetPoint();
+    
+    bool GetFaultRevSoftLimit();
+    bool GetFaultForSoftLimit();
+    bool GetFaultHardwarFailure();
+    bool GetFaultRevLimit();
+    bool GetFaultForLimit();
+    bool GetFaultUnderVoltage();
+    bool GetFaultOverTemp();
+
+    bool GetStickyFaultRevSoftLimit();
+    bool GetStickyFaultForSoftLimit();
+    bool GetStickyFaultRevLimit();
+    bool GetStickyFaultForLimit();
+    bool GetStickyFaultUnderVoltage();
+    bool GetStickyFaultOverTemp();
+    
+    int16_t GetResetCount();
+    int16_t GetResetFlags();
+    
+
+    
 
     void sendMotorEnable(bool motor_enable);
     void Set(int mode, double demand0);

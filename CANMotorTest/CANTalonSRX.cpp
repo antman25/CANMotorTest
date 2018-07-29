@@ -319,28 +319,6 @@ void CANTalonSRX::Set(int mode, double demand0)
   SetDemand(mode,idemand0);
 }
 
-/*void CANTalonSRX::SetModeSelect(int modeSelect,int demand)
-{
-  TALON_Control_1_General_10ms_t frame;
-  memset(&frame,0,sizeof(frame));
-  frame.ModeSelect = modeSelect;
-  frame.DemandH = demand>>16;
-  frame.DemandM = demand>>8;
-  frame.DemandL = demand>>0;
-  
-  CAN_message_t msg;
-  msg.id = CONTROL_1 | deviceNumber;
-  msg.ext = 1;
-  memcpy(msg.buf,&frame,sizeof(frame));
-  msg.len = 8;
-  CANbus0.write(msg);
-}
-
-void CANTalonSRX::SetModeSelect(int param)
-{
-  SetModeSelect(param, 0);
-}*/
-
 void CANTalonSRX::SetProfileSlotSelect(int param)
 {
   byte slot = param & 0x03;
@@ -549,6 +527,87 @@ double CANTalonSRX::GetBatteryV()
 {
   uint32_t raw = status4.BatteryV;
   return (double)raw * 0.05 + 4;
+}
+
+bool CANTalonSRX::GetFaultRevSoftLimit()
+{
+  return status1.Fault_RevSoftLim ? true : false;
+}
+
+bool CANTalonSRX::GetFaultForSoftLimit()
+{
+  return status1.Fault_ForSoftLim ? true : false;
+}
+
+bool CANTalonSRX::GetFaultHardwarFailure()
+{
+  return status1.Fault_HardwareFailure ? true : false;
+}
+
+bool CANTalonSRX::GetFaultRevLimit()
+{
+  return status1.Fault_RevLim ? true : false;
+}
+
+bool CANTalonSRX::GetFaultForLimit()
+{
+  return status1.Fault_ForLim ? true : false;
+}
+
+bool CANTalonSRX::GetFaultUnderVoltage()
+{
+  return status1.Fault_UnderVoltage ? true : false;
+}
+
+bool CANTalonSRX::GetFaultOverTemp()
+{
+  return status1.Fault_OverTemp ? true : false;
+}
+
+bool CANTalonSRX::GetStickyFaultRevSoftLimit()
+{
+  return status2.StckyFault_RevSoftLim ? true : false;
+}
+
+bool CANTalonSRX::GetStickyFaultForSoftLimit()
+{
+  return status2.StckyFault_ForSoftLim ? true : false;
+}
+
+bool CANTalonSRX::GetStickyFaultRevLimit()
+{
+  return status2.StckyFault_RevLim ? true : false;
+}
+
+bool CANTalonSRX::GetStickyFaultForLimit()
+{
+  return status2.StckyFault_ForLim ? true : false;
+}
+
+bool CANTalonSRX::GetStickyFaultUnderVoltage()
+{
+  return status2.StckyFault_UnderVoltage ? true : false;
+}
+
+bool CANTalonSRX::GetStickyFaultOverTemp()
+{
+  return status2.StckyFault_OverTemp ? true : false;
+}
+
+int16_t CANTalonSRX::GetResetCount()
+{
+  int16_t raw = status5.ResetCountH;
+  raw <<= 8;
+  raw |= status5.ResetCountL;
+  return raw;
+}
+
+int16_t CANTalonSRX::GetResetFlags()
+{
+  int16_t raw = status5.ResetFlagsH;
+  raw <<= 8;
+  raw |= status5.ResetFlagsL;
+  return raw;
 }
 
 void CANTalonSRX::update(CAN_message_t *inmsg)
