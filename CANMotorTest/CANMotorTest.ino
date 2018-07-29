@@ -17,18 +17,12 @@
 #define TIMEOUT_MOTOR_CMD     300
 #define TIMEOUT_MOTOR_STATUS  50
 
-/*CANTalonSRX motorLeft(LEFT_MASTER_ID,10);
-CANTalonSRX motorLeft_Slave1(LEFT_SLAVE_1_ID,10);
-CANTalonSRX motorLeft_Slave2(LEFT_SLAVE_2_ID,10);
-
-CANTalonSRX motorRight(RIGHT_MASTER_ID,10);
-CANTalonSRX motorRight_Slave1(RIGHT_SLAVE_1_ID,10);
-CANTalonSRX motorRight_Slave2(RIGHT_SLAVE_2_ID,10);*/
-
 CANTalonSRX motor[6];
 
 titan_base::Status motor_status;
 titan_base::MotorVelocity vel_cmd;
+
+ros::NodeHandle nh;
 
 ros::Publisher pubMotorStatus("motor_status", &motor_status);
 
@@ -56,6 +50,21 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   left_motor_sp = (float)msg.left_angular_vel;
   right_motor_sp = (float)msg.right_angular_vel;
   timerMotorTimeout = millis();
+
+  float left_rev_s = left_motor_sp;
+  int left_sp = 2.0 * 1024* left_rev_s / 10;
+
+  float right_rev_s = right_motor_sp;
+  int right_sp = 2.0 * 1024* right_rev_s / 10;
+
+
+  motor[LEFT_MASTER_ID].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
+  motor[LEFT_SLAVE_1_ID].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
+  motor[LEFT_SLAVE_2_ID].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
+  
+  motor[RIGHT_MASTER_ID].Set(CANTalonSRX::kMode_VelocityCloseLoop,right_sp);
+  motor[RIGHT_SLAVE_1_ID].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
+  motor[RIGHT_SLAVE_2_ID].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 }
 
 ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cbMotorVelocity);
@@ -83,21 +92,21 @@ void checkTimers()
 
 void configurePID()
 {
-  motorLeft.SetFgain(0, F_gain);
-  motorLeft_Slave1.SetFgain(0, F_gain);
-  motorLeft_Slave2.SetFgain(0, F_gain);
+  motor[LEFT_MASTER_ID].SetFgain(0, F_gain);
+  motor[LEFT_SLAVE_1_ID].SetFgain(0, F_gain);
+  motor[LEFT_SLAVE_2_ID].SetFgain(0, F_gain);
   
-  motorRight.SetFgain(0, F_gain);
-  motorRight_Slave1.SetFgain(0, F_gain);
-  motorRight_Slave2.SetFgain(0, F_gain);
+  motor[RIGHT_MASTER_ID].SetFgain(0, F_gain);
+  motor[RIGHT_SLAVE_1_ID].SetFgain(0, F_gain);
+  motor[RIGHT_SLAVE_2_ID].SetFgain(0, F_gain);
 
-  motorLeft.SetPgain(0, P_gain);
-  motorLeft.SetIgain(0, I_gain);
-  motorLeft.SetDgain(0, D_gain);
+  motor[LEFT_MASTER_ID].SetPgain(0, P_gain);
+  motor[LEFT_MASTER_ID].SetIgain(0, I_gain);
+  motor[LEFT_MASTER_ID].SetDgain(0, D_gain);
 
-  motorRight.SetPgain(0, P_gain);
-  motorRight.SetIgain(0, I_gain);
-  motorRight.SetDgain(0, D_gain); 
+  motor[RIGHT_MASTER_ID].SetPgain(0, P_gain);
+  motor[RIGHT_MASTER_ID].SetIgain(0, I_gain);
+  motor[RIGHT_MASTER_ID].SetDgain(0, D_gain); 
 }
 
 void configureMotors()
@@ -106,42 +115,43 @@ void configureMotors()
   {
     motor[i] = CANTalonSRX(i+1,10);
   }
+
+  motor[LEFT_MASTER_ID].begin(&CANbus0);
+  motor[LEFT_SLAVE_1_ID].begin(&CANbus0);
+  motor[LEFT_SLAVE_2_ID].begin(&CANbus0);
   
-  motorRight.SetSensorPhase(true);
+  motor[RIGHT_MASTER_ID].begin(&CANbus0);
+  motor[RIGHT_SLAVE_1_ID].begin(&CANbus0);
+  motor[RIGHT_SLAVE_2_ID].begin(&CANbus0);
   
-  motorLeft.SetSensorPhase(true);
   
-  motorLeft.SetMotorInvert(true);
-  motorLeft_Slave1.SetMotorInvert(true);
-  motorLeft_Slave2.SetMotorInvert(true);
+  motor[RIGHT_MASTER_ID].SetSensorPhase(true);
+  
+  motor[LEFT_MASTER_ID].SetSensorPhase(true);
+  motor[LEFT_MASTER_ID].SetMotorInvert(true);
+  motor[LEFT_SLAVE_1_ID].SetMotorInvert(true);
+  motor[LEFT_SLAVE_2_ID].SetMotorInvert(true);
+
+  
+
+  motor[LEFT_MASTER_ID].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
+  motor[RIGHT_MASTER_ID].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
+}
+
+void resetEncoderCounts()
+{
+  motor[LEFT_MASTER_ID].SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
+  motor[RIGHT_MASTER_ID].SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
 }
 
 void setup(void)
 {
   CANbus0 = FlexCAN(1000000,0,0,0);
   CANbus0.begin();
-  
-  motorLeft.begin(&CANbus0);
-  motorLeft_Slave1.begin(&CANbus0);
-  motorLeft_Slave2.begin(&CANbus0);
-  
-  motorRight.begin(&CANbus0);
-  motorRight_Slave1.begin(&CANbus0);
-  motorRight_Slave2.begin(&CANbus0);
-  
-  motorLeft.SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
-  motorRight.SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
 
-  motorLeft.SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
-  motorRight.SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
-  
-  
-  configurePID();
-  
   configureMotors();
+  configurePID();
 
-  
-  
 }
 
 void loop(void)
@@ -152,33 +162,16 @@ void loop(void)
     CAN_message_t msg;
     
     CANbus0.read(msg);
-  
-    motorLeft.update(&msg);
-    motorLeft_Slave1.update(&msg);
-    motorLeft_Slave2.update(&msg);
-    
-    motorRight.update(&msg);
-    motorRight_Slave1.update(&msg);
-    motorRight_Slave2.update(&msg);
+
+    for (byte i = 0;i<TOTAL_MOTORS;i++)
+    {
+      motor[i].update(&msg);
+    }
   }
   
   
 
-  float left_rev_s = 0.25;
-  int left_sp = 2.0 * 1024* left_rev_s / 10;
-
-  float right_rev_s = 0.25;
-  int right_sp = 2.0 * 1024* right_rev_s / 10;
-
-  //motorLeft.SetDemand(CANTalonSRX::kMode_DutyCycle, 0.05);
-  motorLeft.Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
-  motorLeft_Slave1.SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
-  motorLeft_Slave2.SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
   
-  motorRight.Set(CANTalonSRX::kMode_VelocityCloseLoop,right_sp);
-  //motorRight.SetDemand(CANTalonSRX::kMode_DutyCycle, 0.05);
-  motorRight_Slave1.SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
-  motorRight_Slave2.SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 
 
     /*int32_t right_vel = motorRight.GetSensorVel();
