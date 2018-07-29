@@ -71,7 +71,38 @@ ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cb
 
 void publishMotorStatus()
 {
-  
+  for (byte i = 0;i < TOTAL_MOTORS;i++)
+  {
+    motor_status.DeviceID = i + 1;
+    motor_status.Fault_UnderVoltage = false;
+    motor_status.Fault_ForLim = false;
+    motor_status.Fault_RevLim = false;
+    motor_status.Fault_HardwareFailure = false;
+    motor_status.Fault_ForSoftLim = false;
+    motor_status.Fault_RevSoftLim = false;
+    
+    motor_status.StckyFault_OverTemp = false;
+    motor_status.StckyFault_ForLim = false;
+    motor_status.StckyFault_RevLim = false;
+    motor_status.StckyFault_HardwareFailure = false;
+    motor_status.StckyFault_ForSoftLim = false;
+    motor_status.StckyFault_RevSoftLim = false;
+    
+    motor_status.AppliedThrottle = motor[i].GetAppliedThrottle();
+    motor_status.CloseLoopErr = motor[i].GetCloseLoopErr();
+    motor_status.SensorPosition = motor[i].GetSensorPos();
+    motor_status.SensorVelocity = motor[i].GetSensorVel();
+    motor_status.Current = motor[i].GetCurrent();
+
+    motor_status.BrakeIsEnabled = false;
+    motor_status.Temp = motor[i].GetTemp();
+    motor_status.BatteryV = motor[i].GetBatteryV();
+    
+    motor_status.ResetCount = 0;
+    motor_status.ResetFlags = 0;
+
+    pubMotorStatus.publish(&motor_status);
+  }
 }
 
 void checkTimers()
@@ -90,7 +121,7 @@ void checkTimers()
   }
 }
 
-void configurePID()
+void setupPIDF()
 {
   motor[LEFT_MASTER_ID].SetFgain(0, F_gain);
   motor[LEFT_SLAVE_1_ID].SetFgain(0, F_gain);
@@ -109,7 +140,7 @@ void configurePID()
   motor[RIGHT_MASTER_ID].SetDgain(0, D_gain); 
 }
 
-void configureMotors()
+void setupMotors()
 {
   for (byte i=0;i<TOTAL_MOTORS;i++)
   {
@@ -134,8 +165,8 @@ void configureMotors()
 
   
 
-  motor[LEFT_MASTER_ID].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
-  motor[RIGHT_MASTER_ID].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 150);
+  motor[LEFT_MASTER_ID].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 250);
+  motor[RIGHT_MASTER_ID].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 250);
 }
 
 void resetEncoderCounts()
@@ -149,9 +180,12 @@ void setup(void)
   CANbus0 = FlexCAN(1000000,0,0,0);
   CANbus0.begin();
 
-  configureMotors();
-  configurePID();
-
+  setupMotors();
+  setupPIDF();
+  resetEncoderCounts();
+  nh.initNode();
+  nh.advertise(pubMotorStatus);
+  nh.subscribe(subMotorVelocity);
 }
 
 void loop(void)
