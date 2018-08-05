@@ -66,7 +66,7 @@ ros::Publisher pubDebug("debug", &debug);
 
 float left_motor_sp = 0.0f;
 float right_motor_sp = 0.0f;
-
+bool valid_sp = false;
 
 
 FlexCAN CANbus0;
@@ -94,7 +94,7 @@ void updateMotors()
   int left_sp = (left_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
   int right_sp = (right_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
   
-  motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(true);
+  motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(valid_sp);
   
   motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
   motor[getIndex(LEFT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
@@ -117,6 +117,7 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   //digitalWrite(LED_BUILTIN, HIGH);
   left_motor_sp = (float)msg.left_angular_vel;
   right_motor_sp = (float)msg.right_angular_vel;
+  valid_sp = true;
   timerMotorTimeout = millis();
 }
 
@@ -217,6 +218,7 @@ void checkTimers()
   {
     left_motor_sp = 0.0f;
     right_motor_sp = 0.0f;
+    valid_sp = false;
   } 
 
   if (millis() - timerIMU > TIMEOUT_IMU)
