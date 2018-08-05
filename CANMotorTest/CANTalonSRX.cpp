@@ -253,7 +253,7 @@ void CANTalonSRX::SetDemand(int mode, int demand0)
   demand.Mode_4b = ctrl_mode;
   demand.SensorPhase = sensorPhase;
   demand.Inverted = outputInvert;
-  
+  demand.NeutralMode = neutralMode;
 
   CAN_message_t msg;
   msg.id = CONTROL_3 | deviceNumber;
@@ -397,6 +397,11 @@ void CANTalonSRX::SetCloseLoopRampRate(unsigned slotIdx,int closeLoopRampRate)
   if(slotIdx == 0)
     return SetParam(eClosedloopRamp, closeLoopRampRate);
   return SetParam(eClosedloopRamp, closeLoopRampRate);
+}
+
+void CANTalonSRX::SetNeutralMode(byte val)
+{
+  neutralMode = val & 0x03;
 }
 
 int32_t CANTalonSRX::GetSensorPos()

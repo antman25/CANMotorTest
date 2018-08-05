@@ -5,12 +5,14 @@
 
 #include <titan_base/Status.h>
 #include <titan_base/MotorVelocity.h>
+#include <titan_base/PIDF.h>
 
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/Temperature.h>
 
 #include <std_msgs/String.h>
+#include <std_msgs/Float32.h>
 
 #include <MPU9250.h>
 #include <Wire.h>
@@ -27,15 +29,17 @@
 
 #define TOTAL_MOTORS          6
 
-#define TIMEOUT_MOTOR_CMD     100
+#define TIMEOUT_MOTOR_CMD     200
 #define TIMEOUT_MOTOR_STATUS  50
 #define TIMEOUT_IMU           50
-#define TIMEOUT_MOTOR_UPDATE  30
+#define TIMEOUT_MOTOR_UPDATE  25
 
 #define GEAR_RATIO            2.0
 #define TICKS_PER_REV         1024
 
+#define NEUTRAL_MODE            CANTalonSRX::kBrakeOverride_OverrideCoast
 
+#define MAX_THROTTLE          256
 
 
 CANTalonSRX motor[TOTAL_MOTORS] = { 
@@ -72,10 +76,10 @@ bool valid_sp = false;
 FlexCAN CANbus0;
 MPU9250 IMU(Wire,0x68);
 
-float F_gain = 1.0;//10.0 / 1024.0;
-float P_gain = 1.4;
-float I_gain = 0.01;
-float D_gain = 20.0;
+float F_gain = 60.0f / 1024.0f / 2.0f;
+float P_gain = 1.0;
+float I_gain = 0.00;
+float D_gain = 0.0;
 
 long timerMotorTimeout = millis();
 long timerMotorStatus = millis();
@@ -84,6 +88,8 @@ long timerMotorUpdate = millis();
 
 long seq = 0;
 
+void setupPIDF();
+
 byte getIndex(byte id)
 {
   return id - 1;
@@ -91,10 +97,21 @@ byte getIndex(byte id)
 
 void updateMotors()
 {
-  int left_sp = (left_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
-  int right_sp = (right_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
+  //int left_sp = (left_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
+  //int right_sp = (right_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
+
+  float left_sp = left_motor_sp / ( 2.0 * PI );
+  float right_sp = right_motor_sp / ( 2.0 * PI );
   
   motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(valid_sp);
+  if (valid_sp)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
   
   motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
   motor[getIndex(LEFT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
@@ -105,11 +122,11 @@ void updateMotors()
   motor[getIndex(RIGHT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 
 
-  /*char output[120];
+  char output[120];
   
-  sprintf(output,"Left SP: %f rad/s = %i ticks\nRight SP: %f rad/s = %i ticks\n",left_motor_sp,left_sp,right_motor_sp,right_sp);
+  sprintf(output,"Left SP: %f rad/s -- %f rev/s -- Right SP: %f rad/s -- %f rev/s",left_motor_sp,left_sp,right_motor_sp,right_sp);
   debug.data = output;
-  pubDebug.publish( &debug );*/
+  pubDebug.publish( &debug );
 }
 
 void cbMotorVelocity( const titan_base::MotorVelocity &msg)
@@ -121,7 +138,23 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   timerMotorTimeout = millis();
 }
 
+void cbSetPIDFParam ( const titan_base::PIDF &msg)
+{
+  P_gain = msg.P_Gain;
+  I_gain = msg.I_Gain;
+  D_gain = msg.D_Gain;
+  F_gain = msg.F_Gain;
+  setupPIDF();
+  char output[120];
+  
+  sprintf(output,"P: %f -- I: %f -- D: %f -- F: %f",P_gain,I_gain,D_gain,F_gain);
+  debug.data = output;
+  pubDebug.publish( &debug );
+}
+
 ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cbMotorVelocity);
+ros::Subscriber<titan_base::PIDF> subSetPIDFParam("set_pidf_param", cbSetPIDFParam);
+
 
 
 
@@ -130,6 +163,12 @@ void publishMotorStatus()
   
   for (byte i = 0;i < TOTAL_MOTORS;i++)
   {
+    char id[] = "";
+    motor_status.header.frame_id = id;
+    motor_status.header.stamp=nh.now();
+    motor_status.header.seq = seq;
+    seq = seq + 1;
+    
     motor_status.DeviceId = i + 1;
     motor_status.StckyFault_OverTemp = motor[i].GetFaultOverTemp();
     motor_status.Fault_UnderVoltage = motor[i].GetFaultUnderVoltage();
@@ -221,6 +260,12 @@ void checkTimers()
     valid_sp = false;
   } 
 
+  if (millis() - timerMotorUpdate > TIMEOUT_MOTOR_UPDATE)
+  {
+    timerMotorUpdate = millis();
+    updateMotors();
+  }
+
   if (millis() - timerIMU > TIMEOUT_IMU)
   {
     timerIMU = millis();
@@ -230,16 +275,10 @@ void checkTimers()
   if (millis() - timerMotorStatus > TIMEOUT_MOTOR_STATUS)
   {
    timerMotorStatus = millis();
-   
    publishMotorStatus();
   }
 
-  if (millis() - timerMotorUpdate > TIMEOUT_MOTOR_UPDATE)
-  {
-    timerMotorUpdate = millis();
-    
-    updateMotors();
-  }
+  
 }
 
 void setupPIDF()
@@ -261,6 +300,34 @@ void setupPIDF()
   motor[getIndex(RIGHT_MASTER_ID)].SetDgain(0, D_gain); 
 }
 
+void setupPhase()
+{
+  motor[getIndex(LEFT_MASTER_ID)].SetSensorPhase(true);
+  
+  motor[getIndex(LEFT_MASTER_ID)].SetMotorInvert(true);
+  motor[getIndex(LEFT_SLAVE_1_ID)].SetMotorInvert(true);
+  motor[getIndex(LEFT_SLAVE_2_ID)].SetMotorInvert(true);
+
+  motor[getIndex(RIGHT_MASTER_ID)].SetSensorPhase(true);
+}
+
+void setupNeutralMode()
+{
+  motor[getIndex(LEFT_MASTER_ID)].SetNeutralMode(NEUTRAL_MODE);
+  motor[getIndex(LEFT_SLAVE_1_ID)].SetNeutralMode(NEUTRAL_MODE);
+  motor[getIndex(LEFT_SLAVE_2_ID)].SetNeutralMode(NEUTRAL_MODE);
+  
+  motor[getIndex(RIGHT_MASTER_ID)].SetNeutralMode(NEUTRAL_MODE); 
+  motor[getIndex(RIGHT_SLAVE_1_ID)].SetNeutralMode(NEUTRAL_MODE);
+  motor[getIndex(RIGHT_SLAVE_2_ID)].SetNeutralMode(NEUTRAL_MODE);
+}
+
+void setupThrottleLimit()
+{
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, MAX_THROTTLE);
+  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, MAX_THROTTLE);
+}
+
 void setupMotors()
 {
   motor[getIndex(LEFT_MASTER_ID)].begin(&CANbus0);
@@ -270,19 +337,10 @@ void setupMotors()
   motor[getIndex(RIGHT_MASTER_ID)].begin(&CANbus0);
   motor[getIndex(RIGHT_SLAVE_1_ID)].begin(&CANbus0);
   motor[getIndex(RIGHT_SLAVE_2_ID)].begin(&CANbus0);
-  
-  
-  motor[getIndex(RIGHT_MASTER_ID)].SetSensorPhase(true);
-  
-  motor[getIndex(LEFT_MASTER_ID)].SetSensorPhase(true);
-  motor[getIndex(LEFT_MASTER_ID)].SetMotorInvert(true);
-  motor[getIndex(LEFT_SLAVE_1_ID)].SetMotorInvert(true);
-  motor[getIndex(LEFT_SLAVE_2_ID)].SetMotorInvert(true);
 
-  
-  
-  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 250);
-  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, 250);
+  setupPhase();
+  setupNeutralMode();
+  setupThrottleLimit();
 }
 
 void setupIMU()
@@ -325,7 +383,7 @@ void setup(void)
   nh.advertise(pubDebug);
   
   nh.subscribe(subMotorVelocity);
-  
+  nh.subscribe(subSetPIDFParam);
   
 }
 

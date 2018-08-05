@@ -209,6 +209,7 @@ class CANTalonSRX
     void SetIzone(unsigned slotIdx,int zone);
     void SetSensorPhase(bool val);
     void SetMotorInvert(bool val);
+    void SetNeutralMode(byte val);
     void SetCloseLoopRampRate(unsigned slotIdx,int closeLoopRampRate);
 
     void printParams();
@@ -217,6 +218,7 @@ class CANTalonSRX
 private:
     uint8_t sensorPhase = 0;
     uint8_t outputInvert = 0;
+    uint8_t neutralMode = 0;
     uint8_t deviceNumber = 0;
     int controlPeriodMs = 0;
     FlexCAN CANbus0;
