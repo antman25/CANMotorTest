@@ -10,6 +10,8 @@
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/Temperature.h>
 
+#include <std_msgs/String.h>
+
 #include <MPU9250.h>
 #include <Wire.h>
 
@@ -25,9 +27,16 @@
 
 #define TOTAL_MOTORS          6
 
-#define TIMEOUT_MOTOR_CMD     300
+#define TIMEOUT_MOTOR_CMD     100
 #define TIMEOUT_MOTOR_STATUS  50
 #define TIMEOUT_IMU           50
+#define TIMEOUT_MOTOR_UPDATE  30
+
+#define GEAR_RATIO            2.0
+#define TICKS_PER_REV         1024
+
+
+
 
 CANTalonSRX motor[TOTAL_MOTORS] = { 
   CANTalonSRX(LEFT_MASTER_ID),
@@ -45,19 +54,21 @@ sensor_msgs::Imu imuRawMsg;
 sensor_msgs::MagneticField magMsg;
 sensor_msgs::Temperature tempMsg;
 
+std_msgs::String debug;
+
 ros::NodeHandle nh;
 
 ros::Publisher pubMotorStatus("motor_status", &motor_status);
 ros::Publisher pubIMURaw("imu/data_raw", &imuRawMsg);
 ros::Publisher pubMag("imu/mag", &magMsg);
 ros::Publisher pubTemp("imu/temp", &tempMsg);
-
+ros::Publisher pubDebug("debug", &debug);
 
 float left_motor_sp = 0.0f;
 float right_motor_sp = 0.0f;
 
 
-byte debug = 1;
+
 FlexCAN CANbus0;
 MPU9250 IMU(Wire,0x68);
 
@@ -69,6 +80,7 @@ float D_gain = 20.0;
 long timerMotorTimeout = millis();
 long timerMotorStatus = millis();
 long timerIMU = millis();
+long timerMotorUpdate = millis();
 
 long seq = 0;
 
@@ -77,18 +89,11 @@ byte getIndex(byte id)
   return id - 1;
 }
 
-void cbMotorVelocity( const titan_base::MotorVelocity &msg)
+void updateMotors()
 {
-  left_motor_sp = (float)msg.left_angular_vel;
-  right_motor_sp = (float)msg.right_angular_vel;
-  timerMotorTimeout = millis();
-
-  float left_rev_s = left_motor_sp;
-  int left_sp = 2.0 * 1024* left_rev_s / 10;
-
-  float right_rev_s = right_motor_sp;
-  int right_sp = 2.0 * 1024* right_rev_s / 10;
-
+  int left_sp = (left_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
+  int right_sp = (right_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
+  
   motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(true);
   
   motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
@@ -99,13 +104,29 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   motor[getIndex(RIGHT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
   motor[getIndex(RIGHT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 
+
+  /*char output[120];
   
+  sprintf(output,"Left SP: %f rad/s = %i ticks\nRight SP: %f rad/s = %i ticks\n",left_motor_sp,left_sp,right_motor_sp,right_sp);
+  debug.data = output;
+  pubDebug.publish( &debug );*/
+}
+
+void cbMotorVelocity( const titan_base::MotorVelocity &msg)
+{
+  //digitalWrite(LED_BUILTIN, HIGH);
+  left_motor_sp = (float)msg.left_angular_vel;
+  right_motor_sp = (float)msg.right_angular_vel;
+  timerMotorTimeout = millis();
 }
 
 ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cbMotorVelocity);
 
+
+
 void publishMotorStatus()
 {
+  
   for (byte i = 0;i < TOTAL_MOTORS;i++)
   {
     motor_status.DeviceId = i + 1;
@@ -138,6 +159,7 @@ void publishMotorStatus()
 
     pubMotorStatus.publish(&motor_status);
   }
+  
 }
 
 void publishIMU()
@@ -197,11 +219,11 @@ void checkTimers()
     right_motor_sp = 0.0f;
   } 
 
-  /*if (millis() - timerIMU > TIMEOUT_IMU)
+  if (millis() - timerIMU > TIMEOUT_IMU)
   {
     timerIMU = millis();
     publishIMU();
-  }*/
+  }
 
   if (millis() - timerMotorStatus > TIMEOUT_MOTOR_STATUS)
   {
@@ -210,7 +232,12 @@ void checkTimers()
    publishMotorStatus();
   }
 
-  
+  if (millis() - timerMotorUpdate > TIMEOUT_MOTOR_UPDATE)
+  {
+    timerMotorUpdate = millis();
+    
+    updateMotors();
+  }
 }
 
 void setupPIDF()
@@ -293,6 +320,7 @@ void setup(void)
   nh.advertise(pubIMURaw);
   nh.advertise(pubMag);
   nh.advertise(pubTemp);
+  nh.advertise(pubDebug);
   
   nh.subscribe(subMotorVelocity);
   
