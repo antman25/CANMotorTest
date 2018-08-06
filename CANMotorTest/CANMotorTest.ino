@@ -85,6 +85,8 @@ float I_gain = 0.001;
 float D_gain = 30.0;
 float F_gain = 1.0f;
 
+float FeedbackCoeff = 1.0f;
+
 long timerMotorTimeout = millis();
 long timerMotorStatus = millis();
 long timerIMU = millis();
@@ -310,6 +312,8 @@ void setupPIDF()
     motor[i].SetIgain(0, I_gain);
     motor[i].SetDgain(0, D_gain);
     motor[i].SetFgain(0, F_gain);
+    motor[i].SetParam(CANTalonSRX::eSelectedSensorCoefficient,FeedbackCoeff);
+    
   }
 }
 
