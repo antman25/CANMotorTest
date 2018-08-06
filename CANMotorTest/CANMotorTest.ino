@@ -30,7 +30,7 @@
 #define TOTAL_MOTORS          6
 
 #define TIMEOUT_MOTOR_CMD     200
-#define TIMEOUT_MOTOR_STATUS  50
+#define TIMEOUT_MOTOR_STATUS  20
 #define TIMEOUT_IMU           50
 #define TIMEOUT_MOTOR_UPDATE  25
 
@@ -76,7 +76,7 @@ bool valid_sp = false;
 FlexCAN CANbus0;
 MPU9250 IMU(Wire,0x68);
 
-float F_gain = 60.0f / 1024.0f / 2.0f;
+float F_gain = 1.0;//60.0f / 1024.0f / 2.0f;
 float P_gain = 1.0;
 float I_gain = 0.00;
 float D_gain = 0.0;
@@ -104,20 +104,22 @@ void updateMotors()
   float right_sp = right_motor_sp / ( 2.0 * PI );
   
   motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(valid_sp);
-  if (valid_sp)
+  /*if (valid_sp)
   {
     digitalWrite(LED_BUILTIN, HIGH);
   }
   else
   {
     digitalWrite(LED_BUILTIN, LOW);
-  }
+  }*/
   
-  motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
+  //motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
+  motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_DutyCycle,left_motor_sp);
   motor[getIndex(LEFT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
   motor[getIndex(LEFT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
   
-  motor[getIndex(RIGHT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,right_sp);
+  //motor[getIndex(RIGHT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,right_sp);
+  motor[getIndex(RIGHT_MASTER_ID)].Set(CANTalonSRX::kMode_DutyCycle,right_motor_sp);
   motor[getIndex(RIGHT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
   motor[getIndex(RIGHT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 

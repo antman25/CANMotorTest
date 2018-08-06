@@ -121,7 +121,7 @@ void CANTalonSRX::begin(FlexCAN *CANDev)
   memset(&status1,0,sizeof(status8));
   memset(&status1,0,sizeof(control1));
   memset(&param_response,0,sizeof(param_response));
-  memset(&status1,0,sizeof(demand));
+  memset(&demand,0,sizeof(demand));
 }
 
 void CANTalonSRX::sendMotorEnable(bool motor_enable)
@@ -647,6 +647,10 @@ void CANTalonSRX::update(CAN_message_t *inmsg)
       memcpy(&status2, msg.buf, msg.len);
       status2_period = millis() - status2_timestamp;
       status2_timestamp = millis();
+      //if (status2.PosDiv8 == 0x01 || status2.VelDiv4 == 0x01)
+      if (status2.VelDiv4 == 0x01)
+      //if (status2.PosDiv8 == 0x01)
+        digitalWrite(LED_BUILTIN, HIGH);
       //printCAN(msg);
     }
     else if (msg.id == (STATUS_3 | deviceNumber))

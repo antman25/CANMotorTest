@@ -137,7 +137,8 @@ typedef struct __attribute__((packed)) _TALON_Status_2_Feedback_20ms_t {
   unsigned StckyFault_UnderVoltage:1;// 6 - 4 
   unsigned StckyFault_OverTemp:1;    // 6 - 5
   unsigned Current_l2:2;             // 6 - 6 - 7
-  unsigned reserved2:4;              // 7: 0 - 3
+  unsigned reserved2:3;              // 7: 0 - 2
+  unsigned Cmd5Allowed:1;            // 7: 3
   unsigned VelDiv4:1;                // 7: 4
   unsigned PosDiv8:1;                // 7: 5 
   unsigned ProfileSlotSelect:1;      // 7: 6
