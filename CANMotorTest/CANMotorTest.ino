@@ -326,8 +326,11 @@ void setupNeutralMode()
 
 void setupThrottleLimit()
 {
-  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, MAX_THROTTLE);
-  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eProfileParamSlot_PeakOutput, MAX_THROTTLE);
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::ePeakPosOutput, MAX_THROTTLE);
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::ePeakNegOutput, -MAX_THROTTLE);
+
+  motor[getIndex(LEFT_RIGHT_ID)].SetParam(CANTalonSRX::ePeakPosOutput, MAX_THROTTLE);
+  motor[getIndex(LEFT_RIGHT_ID)].SetParam(CANTalonSRX::ePeakNegOutput, -MAX_THROTTLE);
 }
 
 void setupMotors()
@@ -360,8 +363,8 @@ void setupIMU()
 
 void resetEncoderCounts()
 {
-  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eSelectedSensorPosition, (int)0);
-  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eSelectedSensorPosition, (int)0);
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
+  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eSelectedSensorPosition, 0);
 }
 
 void setup(void)
