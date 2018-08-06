@@ -29,7 +29,16 @@ class PIDFTuning():
 	
 
 		self.vel_pub = rospy.Publisher('/motor_velocity', MotorVelocity, queue_size=10)
+		self.pidf_pub = rospy.Publisher('/set_pidf_param', PIDF, queue_size=10)
 
+		pidf = PIDF()
+		pidf.P_Gain = 1.6
+		pidf.I_Gain = 0.001
+		pidf.D_Gain = 30.0
+		pidf.F_Gain = 1.0
+		r = rospy.Rate(5)
+		r.sleep()
+		self.pidf_pub.publish(pidf)
 		self.start_time = rospy.get_rostime()
 		
 	def cbMotorStatus(self,status):
@@ -57,10 +66,10 @@ class PIDFTuning():
 			if (i > 0):
 				deltaTime = self.time_pts[i] - self.time_pts[i-1]
 				deltaEncoder = self.pos_pts[i] - self.pos_pts[i-1]
-				deltaRadian = deltaEncoder / 1024.0;
+				deltaRadian = deltaEncoder / 1024.0 / (2*3.1415);
 
 
-				enc_vel = deltaEncoder / deltaTime / 10.0;
+				enc_vel = (deltaEncoder / deltaTime) / 20.0;
 				rad_vel = deltaRadian / deltaTime
 				print "dt: " + str(deltaTime) + " dEncoder: " + str(deltaEncoder) + " dRadian: " + str(deltaRadian)
 				print "Calc: " + str(enc_vel) + " tick/100 ms -- Sensor: " + str(self.vel_pts[i])
@@ -73,12 +82,12 @@ class PIDFTuning():
 			cur_time = rospy.get_rostime()
 			if (cur_time - self.start_time <= d):
 				motor_cmd = MotorVelocity()
-				motor_cmd.left_angular_vel = 0.1;
+				motor_cmd.left_angular_vel = 300;
 				motor_cmd.right_angular_vel = 0;
 				self.vel_pub.publish(motor_cmd);
 			else:
 				self.recording = False
-				self.compareVel()
+				#self.compareVel()
 				
 				self.axarr[0].clear()
 				self.axarr[1].clear()

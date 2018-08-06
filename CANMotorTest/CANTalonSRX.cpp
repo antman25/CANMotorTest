@@ -179,6 +179,7 @@ void CANTalonSRX::GetParamRaw(param_t paramEnum, int32_t value, int8_t subValue,
   //Serial.println("Request Message:");
   //printCAN(msg);
   CANbus0.write(msg);
+  delay(10);
 }
 
 void CANTalonSRX::SetParamRaw(unsigned paramEnum, int rawBits, byte subValue, byte ordinal)
@@ -208,6 +209,7 @@ void CANTalonSRX::SetParamRaw(unsigned paramEnum, int rawBits, byte subValue, by
   //Serial.println("Set Param Raw:");
   //printCAN(msg);
   CANbus0.write(msg);
+  delay(10);
 }
 
 void CANTalonSRX::SetParam(param_t paramEnum, double value)
@@ -262,6 +264,7 @@ void CANTalonSRX::SetDemand(int mode, int demand0)
   msg.len = 8;
   //printCAN(msg);
   CANbus0.write(msg);
+  delay(1);
 }
 
 void CANTalonSRX::Set(int mode, double demand0)
