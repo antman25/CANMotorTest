@@ -24,6 +24,7 @@ class PIDFTuning():
 		self.throttle_pts = []
 		self.pos_pts = []
 		self.vel_pts = []
+		
 	
 		rospy.Subscriber("/motor_status", Status, self.cbMotorStatus)
 	
@@ -32,10 +33,10 @@ class PIDFTuning():
 		self.pidf_pub = rospy.Publisher('/set_pidf_param', PIDF, queue_size=10)
 
 		pidf = PIDF()
-		pidf.P_Gain = 1.6
-		pidf.I_Gain = 0.001
-		pidf.D_Gain = 30.0
-		pidf.F_Gain = 1.0
+		pidf.P_Gain = 0.0
+		pidf.I_Gain = 0.0
+		pidf.D_Gain = 0.0
+		pidf.F_Gain = 200.0
 		r = rospy.Rate(5)
 		r.sleep()
 		self.pidf_pub.publish(pidf)
@@ -49,10 +50,13 @@ class PIDFTuning():
 		if (status.DeviceId == 4):
 			dev_str = 'RIGHT'
 		timestamp = status.header.stamp.secs + (status.header.stamp.nsecs / 1.0e9)
+
+		total_current = 0.0
+		
 		if (status.DeviceId == 1):
 			#
 			if (self.recording == True):
-				rospy.loginfo(str(timestamp) + " - " + dev_str + " - Voltage: %f - CloseLoopErr: %i - Pos %i - Vel %i - Throttle: %i", status.BatteryV, status.CloseLoopErr,status.SensorPosition,status.SensorVelocity,status.AppliedThrottle)
+				rospy.loginfo(str(timestamp) + " - " + dev_str + " - V: %f / I: %f - CloseLoopErr: %i - Pos %i - Vel %i - Throttle: %i", status.BatteryV,status.Current, status.CloseLoopErr,status.SensorPosition,status.SensorVelocity,status.AppliedThrottle)
 				
 				#recorded_data.append( (timestamp, status.CloseLoopErr, status.AppliedThrottle, status.SensorPosition, status.SensorVelocity))
 				self.time_pts.append(timestamp)
@@ -66,10 +70,10 @@ class PIDFTuning():
 			if (i > 0):
 				deltaTime = self.time_pts[i] - self.time_pts[i-1]
 				deltaEncoder = self.pos_pts[i] - self.pos_pts[i-1]
-				deltaRadian = deltaEncoder / 1024.0 / (2*3.1415);
+				deltaRadian = deltaEncoder ;
 
 
-				enc_vel = (deltaEncoder / deltaTime) / 20.0;
+				enc_vel = deltaEncoder / deltaTime;
 				rad_vel = deltaRadian / deltaTime
 				print "dt: " + str(deltaTime) + " dEncoder: " + str(deltaEncoder) + " dRadian: " + str(deltaRadian)
 				print "Calc: " + str(enc_vel) + " tick/100 ms -- Sensor: " + str(self.vel_pts[i])
@@ -82,7 +86,7 @@ class PIDFTuning():
 			cur_time = rospy.get_rostime()
 			if (cur_time - self.start_time <= d):
 				motor_cmd = MotorVelocity()
-				motor_cmd.left_angular_vel = 300;
+				motor_cmd.left_angular_vel = 1.0;
 				motor_cmd.right_angular_vel = 0;
 				self.vel_pub.publish(motor_cmd);
 			else:
@@ -98,7 +102,7 @@ class PIDFTuning():
 				self.axarr[1].plot(self.time_pts,self.throttle_pts)
 				self.axarr[2].plot(self.time_pts,self.pos_pts)
 				self.axarr[3].plot(self.time_pts,self.vel_pts)
-				plt.show()
+				#plt.show()
 				#print self.pos_pts
 				return
 			r.sleep()

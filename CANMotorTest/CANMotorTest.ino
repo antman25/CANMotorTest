@@ -80,12 +80,12 @@ FlexCAN CANbus0;
 MPU9250 IMU(Wire,0x68);
 
 
-float P_gain = 1.6;
-float I_gain = 0.001;
-float D_gain = 30.0;
+float P_gain = 0.0F;
+float I_gain = 0.0F;
+float D_gain = 0.0F;
 float F_gain = 1.0f;
 
-float FeedbackCoeff = 1.0f;
+float FeedbackCoeff = 10.0f / (TICKS_PER_REV);
 
 long timerMotorTimeout = millis();
 long timerMotorStatus = millis();
@@ -291,21 +291,6 @@ void checkTimers()
 
 void setupPIDF()
 {
-  /*motor[getIndex(LEFT_MASTER_ID)].SetFgain(0, F_gain);
-  motor[getIndex(LEFT_SLAVE_1_ID)].SetFgain(0, F_gain);
-  motor[getIndex(LEFT_SLAVE_2_ID)].SetFgain(0, F_gain);
-  
-  motor[getIndex(RIGHT_MASTER_ID)].SetFgain(0, F_gain);
-  motor[getIndex(RIGHT_SLAVE_1_ID)].SetFgain(0, F_gain);
-  motor[getIndex(RIGHT_SLAVE_2_ID)].SetFgain(0, F_gain);
-
-  motor[getIndex(LEFT_MASTER_ID)].SetPgain(0, P_gain);
-  motor[getIndex(LEFT_MASTER_ID)].SetIgain(0, I_gain);
-  motor[getIndex(LEFT_MASTER_ID)].SetDgain(0, D_gain);
-
-  motor[getIndex(RIGHT_MASTER_ID)].SetPgain(0, P_gain);
-  motor[getIndex(RIGHT_MASTER_ID)].SetIgain(0, I_gain);
-  motor[getIndex(RIGHT_MASTER_ID)].SetDgain(0, D_gain); */
   for (int8_t i = 0;i<TOTAL_MOTORS;i++)
   {
     motor[i].SetPgain(0, P_gain);
