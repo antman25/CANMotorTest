@@ -37,7 +37,7 @@
 #define GEAR_RATIO            2.0
 #define TICKS_PER_REV         1024
 
-#define NEUTRAL_MODE            CANTalonSRX::kBrakeOverride_OverrideCoast
+#define NEUTRAL_MODE            CANTalonSRX::kBrakeOverride_OverrideBrake
 
 #define MAX_THROTTLE          512.0
 
@@ -84,8 +84,8 @@ float P_gain = 0.0F;
 float I_gain = 0.0F;
 float D_gain = 0.0F;
 float F_gain = 1.0f;
-
-float FeedbackCoeff = 10.0f / (TICKS_PER_REV);
+float FeedbackCoeff = 0.0f;//10.0f / (TICKS_PER_REV);
+int CloseLoopRampRate = 100;
 
 long timerMotorTimeout = millis();
 long timerMotorStatus = millis();
@@ -106,8 +106,8 @@ void updateMotors()
   //int left_sp = (left_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
   //int right_sp = (right_motor_sp * (1.0/(2.0*PI)) * TICKS_PER_REV * GEAR_RATIO) / 10.0;
 
-  float left_sp = left_motor_sp / ( 2.0 * PI );
-  float right_sp = right_motor_sp / ( 2.0 * PI );
+  float left_sp = left_motor_sp * (GEAR_RATIO * TICKS_PER_REV / (2 * PI * 10));
+  float right_sp = right_motor_sp * (GEAR_RATIO * TICKS_PER_REV / (2 * PI * 10));
   
   motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(valid_sp);
   /*if (valid_sp)
@@ -119,22 +119,22 @@ void updateMotors()
     digitalWrite(LED_BUILTIN, LOW);
   }*/
   
-  motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_motor_sp);
+  motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
   //motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_DutyCycle,left_motor_sp);
   motor[getIndex(LEFT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
   motor[getIndex(LEFT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, LEFT_MASTER_ID);
   
-  motor[getIndex(RIGHT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,right_motor_sp);
+  motor[getIndex(RIGHT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,right_sp);
   //motor[getIndex(RIGHT_MASTER_ID)].Set(CANTalonSRX::kMode_DutyCycle,right_motor_sp);
   motor[getIndex(RIGHT_SLAVE_1_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
   motor[getIndex(RIGHT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 
 
-  char output[120];
+  /*char output[120];
   
-  sprintf(output,"Left SP: %f rad/s -- %f rev/s -- Right SP: %f rad/s -- %f rev/s",left_motor_sp,left_sp,right_motor_sp,right_sp);
+  sprintf(output,"Left SP: %f rad/s -- %f ticks/100ms -- Right SP: %f rad/s -- %f ticks/100ms",left_motor_sp,left_sp,right_motor_sp,right_sp);
   debug.data = output;
-  pubDebug.publish( &debug );
+  pubDebug.publish( &debug );*/
 }
 
 void cbMotorVelocity( const titan_base::MotorVelocity &msg)
@@ -152,12 +152,11 @@ void cbSetPIDFParam ( const titan_base::PIDF &msg)
   I_gain = msg.I_Gain;
   D_gain = msg.D_Gain;
   F_gain = msg.F_Gain;
-  setupPIDF();
-  char output[120];
+  FeedbackCoeff = msg.FeedbackCoeff;
+  CloseLoopRampRate = msg.RampRate;
   
-  sprintf(output,"P: %f -- I: %f -- D: %f -- F: %f",P_gain,I_gain,D_gain,F_gain);
-  debug.data = output;
-  pubDebug.publish( &debug );
+  setupPIDF();
+  
 }
 
 ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cbMotorVelocity);
@@ -297,8 +296,8 @@ void setupPIDF()
     motor[i].SetIgain(0, I_gain);
     motor[i].SetDgain(0, D_gain);
     motor[i].SetFgain(0, F_gain);
-    motor[i].SetParam(CANTalonSRX::eSelectedSensorCoefficient,FeedbackCoeff);
-    
+    motor[i].SetFeedbackCoeff(FeedbackCoeff);
+    motor[i].SetCloseLoopRampRate(0,CloseLoopRampRate);
   }
 }
 
@@ -344,15 +343,15 @@ void resetEncoderCounts()
 
 void setupVelocityCalc()
 {
-  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityPeriod, 50.0);
-  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityPeriod, 50.0);
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityPeriod, 8.0);
+  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityPeriod, 8.0);
 
-  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityWindow, 32.0);
-  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityWindow, 32.0);
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityWindow, 8.0);
+  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eSampleVelocityWindow, 8.0);
 
   
-  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eClosedloopRamp, 10.0);
-  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eClosedloopRamp, 10.0);
+  motor[getIndex(LEFT_MASTER_ID)].SetParam(CANTalonSRX::eClosedloopRamp, 0.0);
+  motor[getIndex(RIGHT_MASTER_ID)].SetParam(CANTalonSRX::eClosedloopRamp, 0.0);
 }
 
 void setupMotors()

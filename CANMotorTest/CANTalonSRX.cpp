@@ -402,6 +402,12 @@ void CANTalonSRX::SetCloseLoopRampRate(unsigned slotIdx,int closeLoopRampRate)
   return SetParam(eClosedloopRamp, closeLoopRampRate);
 }
 
+void CANTalonSRX::SetFeedbackCoeff(float coeff)
+{
+  int val = (int)(65536.0 * coeff);
+  SetParam(eSelectedSensorCoefficient,val);
+}
+
 void CANTalonSRX::SetNeutralMode(byte val)
 {
   neutralMode = val & 0x03;

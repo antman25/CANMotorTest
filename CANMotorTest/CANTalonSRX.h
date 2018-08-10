@@ -211,7 +211,7 @@ class CANTalonSRX
     void SetMotorInvert(bool val);
     void SetNeutralMode(byte val);
     void SetCloseLoopRampRate(unsigned slotIdx,int closeLoopRampRate);
-
+    void SetFeedbackCoeff(float coeff);
     void printParams();
 
     
