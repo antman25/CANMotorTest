@@ -124,25 +124,37 @@ typedef struct __attribute__((packed)) _TALON_Status_1_General_10ms_t {
 } TALON_Status_1_General_10ms_t ;
 
 typedef struct __attribute__((packed)) _TALON_Status_2_Feedback_20ms_t {
-  unsigned SensorPositionH:8; // 0
-  unsigned SensorPositionM:8; // 1
-  unsigned SensorPositionL:8; // 2
-  unsigned SensorVelocityH:8; // 3
-  unsigned SensorVelocityL:8; // 4
-  unsigned Current_h8:8;      // 5
-  unsigned StckyFault_RevSoftLim:1;  // 6 - 0
-  unsigned StckyFault_ForSoftLim:1;  // 6 - 1
-  unsigned StckyFault_RevLim:1;      // 6 - 2
-  unsigned StckyFault_ForLim:1;      // 6 - 3
-  unsigned StckyFault_UnderVoltage:1;// 6 - 4 
-  unsigned StckyFault_OverTemp:1;    // 6 - 5
-  unsigned Current_l2:2;             // 6 - 6 - 7
-  unsigned reserved2:3;              // 7: 0 - 2
-  unsigned Cmd5Allowed:1;            // 7: 3
-  unsigned VelDiv4:1;                // 7: 4
-  unsigned PosDiv8:1;                // 7: 5 
-  unsigned ProfileSlotSelect:1;      // 7: 6
-  unsigned BrakeIsEnabled:1;         // 7: 7
+  unsigned SensorPositionH:8; // 0 - 7 - (0x00 + 0)
+  unsigned SensorPositionM:8; // 8 - 15  (0x08 + 0)
+  unsigned SensorPositionL:8; // 16 - 23 (0x10 + 0)
+  unsigned SensorVelocityH:8; // 24 - 31 (0x18 + 0)
+  unsigned SensorVelocityL:8; // 32 - 39 (0x20 + 0)
+  unsigned Current_h8:8;      // 40 - 47 (0x28 + 0)
+  unsigned StckyFault_RevSoftLim:1;  // 6 - 0 - 48 (0x30 + 0)
+  unsigned StckyFault_ForSoftLim:1;  // 6 - 1 - 49 (0x30 + 1)
+  unsigned StckyFault_RevLim:1;      // 6 - 2 - 50 (0x30 + 2)
+  unsigned StckyFault_ForLim:1;      // 6 - 3 - 51 (0x30 + 3)
+  unsigned StckyFault_UnderVoltage:1;// 6 - 4 - 52 (0x30 + 4)
+  unsigned StckyFault_OverTemp:1;    // 6 - 5 - 53 (0x30 + 5)
+  unsigned Current_l2:2;             // 6 - 6 - 7  (0x30 + 6,7)
+  
+  /*unsigned reserved2:3;              // 7: 0 - 2 - 55 (0x38 +0,1,2)
+  unsigned Cmd5Allowed:1;            // 7: 3 - 56 (0x38 + 3)
+  unsigned VelDiv4:1;                // 7: 4 - 57 (0x38 + 4)
+  unsigned PosDiv8:1;                // 7: 5 - 58 (0x38 + 5)
+  unsigned ProfileSlotSelect:1;      // 7: 6 - 59 (0x38 + 6)
+  unsigned BrakeIsEnabled:1;         // 7: 7 - 60 (0x38 + 7)*/
+
+  unsigned reserved2:3;              // 7: 0 - 2 - 55 (0x38 +0,1,2)
+  unsigned VelDiv4:1;            // 7: 3 - 56 (0x38 + 3)
+  unsigned PosDiv8:1;                // 7: 4 - 57 (0x38 + 4)
+  unsigned Cmd5Allowed:1;                // 7: 5 - 58 (0x38 + 5)
+  unsigned ProfileSlotSelect:1;      // 7: 6 - 59 (0x38 + 6)
+  unsigned BrakeIsEnabled:1;         // 7: 7 - 60 (0x38 + 7)
+
+  
+
+  
 } TALON_Status_2_Feedback_20ms_t ;
 
 typedef struct __attribute__((packed)) _TALON_Status_3_Enc_100ms_t {

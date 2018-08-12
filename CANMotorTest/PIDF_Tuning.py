@@ -96,7 +96,7 @@ class PIDFTuning():
 			if (cur_time - self.prev_time <= d):
 				motor_cmd = MotorVelocity()
 				if (i % 2 == 0):
-					self.cur_sp = 2.0 * 6.248
+					self.cur_sp = 1.0 * 6.248
 				else:
 					self.cur_sp = 0
 				motor_cmd.left_angular_vel = self.cur_sp;

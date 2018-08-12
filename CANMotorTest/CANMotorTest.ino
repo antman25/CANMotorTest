@@ -29,10 +29,10 @@
 
 #define TOTAL_MOTORS          6
 
-#define TIMEOUT_MOTOR_CMD     200
+#define TIMEOUT_MOTOR_CMD     100
 #define TIMEOUT_MOTOR_STATUS  20
 #define TIMEOUT_IMU           50
-#define TIMEOUT_MOTOR_UPDATE  25
+#define TIMEOUT_MOTOR_UPDATE  50
 
 #define GEAR_RATIO            2.0
 #define TICKS_PER_REV         1024
@@ -80,9 +80,9 @@ FlexCAN CANbus0;
 MPU9250 IMU(Wire,0x68);
 
 
-float P_gain = 0.0F;
+float P_gain = 0.5F;
 float I_gain = 0.0F;
-float D_gain = 0.0F;
+float D_gain = 0.001F;
 float F_gain = 1.0f;
 float FeedbackCoeff = 0.0f;//10.0f / (TICKS_PER_REV);
 int CloseLoopRampRate = 100;
@@ -110,14 +110,14 @@ void updateMotors()
   float right_sp = right_motor_sp * (GEAR_RATIO * TICKS_PER_REV / (2 * PI * 10));
   
   motor[getIndex(LEFT_MASTER_ID)].sendMotorEnable(valid_sp);
-  /*if (valid_sp)
+  if (valid_sp)
   {
     digitalWrite(LED_BUILTIN, HIGH);
   }
   else
   {
     digitalWrite(LED_BUILTIN, LOW);
-  }*/
+  }
   
   motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_VelocityCloseLoop,left_sp);
   //motor[getIndex(LEFT_MASTER_ID)].Set(CANTalonSRX::kMode_DutyCycle,left_motor_sp);
@@ -130,11 +130,11 @@ void updateMotors()
   motor[getIndex(RIGHT_SLAVE_2_ID)].SetDemand(CANTalonSRX::kMode_SlaveFollower, RIGHT_MASTER_ID);
 
 
-  /*char output[120];
+  char output[120];
   
   sprintf(output,"Left SP: %f rad/s -- %f ticks/100ms -- Right SP: %f rad/s -- %f ticks/100ms",left_motor_sp,left_sp,right_motor_sp,right_sp);
   debug.data = output;
-  pubDebug.publish( &debug );*/
+  pubDebug.publish( &debug );
 }
 
 void cbMotorVelocity( const titan_base::MotorVelocity &msg)
@@ -163,7 +163,13 @@ ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cb
 ros::Subscriber<titan_base::PIDF> subSetPIDFParam("set_pidf_param", cbSetPIDFParam);
 
 
-
+void publishMotorPIDF()
+{
+  for (int8_t i = 0;i<TOTAL_MOTORS;i++)
+  {
+    //float p = 
+  }
+}
 
 void publishMotorStatus()
 {

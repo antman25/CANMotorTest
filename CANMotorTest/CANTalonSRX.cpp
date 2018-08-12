@@ -234,6 +234,25 @@ void CANTalonSRX::SetParam(param_t paramEnum, double value)
       //Serial.print("Raw: ");
       //Serial.println(rawbits);
       break;
+    case eNominalBatteryVoltage:
+      rawbits = (int)(value * 256.0F);
+      /* negative or zero disables feature */
+      if (rawbits < 0)
+          rawbits = 0;
+      /* max value is 255.0V */
+      if (rawbits > 0xFF00)
+          rawbits = 0xFF00;
+      break;
+    case eProfileParamSlot_PeakOutput:
+        if (value > 1.0f) /* bounds check doubles that are outside u10.22 */
+            value = 1.0f;
+        else if (value < 0)
+            value = 0;
+        rawbits = (int)(value * 1023.0);
+        break;
+    case eSelectedSensorCoefficient:
+        rawbits = (int)(value * 65536.0);
+        break;
     default: /* everything else is integral */
       rawbits = (int32_t)value;
       break;
@@ -404,8 +423,7 @@ void CANTalonSRX::SetCloseLoopRampRate(unsigned slotIdx,int closeLoopRampRate)
 
 void CANTalonSRX::SetFeedbackCoeff(float coeff)
 {
-  int val = (int)(65536.0 * coeff);
-  SetParam(eSelectedSensorCoefficient,val);
+  SetParam(eSelectedSensorCoefficient,coeff);
 }
 
 void CANTalonSRX::SetNeutralMode(byte val)
