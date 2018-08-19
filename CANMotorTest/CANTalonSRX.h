@@ -230,6 +230,7 @@ private:
     TALON_Status_6_Eol_t status6;
     TALON_Status_7_Debug_200ms_t status7;
     TALON_Status_8_PulseWid_100ms_t status8;
+    TALON_Status_13_CloseLoop_100ms_t status13;
     TALON_Control_1_General_10ms_t control1;
     TALON_Param_Request_t param_response;
     TALON_Demand_t demand;
@@ -244,6 +245,7 @@ private:
     unsigned long status6_timestamp = millis();
     unsigned long status7_timestamp = millis();
     unsigned long status8_timestamp = millis();
+    unsigned long status13_timestamp = millis();
 
     int32_t status1_period = 0;
     int32_t status2_period = 0;
@@ -253,6 +255,7 @@ private:
     int32_t status6_period = 0;
     int32_t status7_period = 0;
     int32_t status8_period = 0;
+    int32_t status13_period = 0;
     int32_t control1_period = 0;
 
     unsigned long timer_control1 = millis();

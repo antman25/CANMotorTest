@@ -75,7 +75,7 @@ void printCAN(CAN_message_t msg)
 
 void CANTalonSRX::printParams()
 {
-  for (int i = 0;i<450;i++)
+  for (int i = 0;i<250;i++)
   {
     if (param_timestamp[i] > 0)
     {
@@ -106,20 +106,21 @@ void CANTalonSRX::begin(FlexCAN *CANDev)
 {
   CANbus0 = *CANDev;
 
-  for (byte i =0;i<255;i++)
+  for (byte i =0;i<250;i++)
   {
     param[i] = 0;
     param_timestamp[i] = 0;
   }
   memset(&status1,0,sizeof(status1));
-  memset(&status1,0,sizeof(status2));
-  memset(&status1,0,sizeof(status3));
-  memset(&status1,0,sizeof(status4));
-  memset(&status1,0,sizeof(status5));
-  memset(&status1,0,sizeof(status6));
-  memset(&status1,0,sizeof(status7));
-  memset(&status1,0,sizeof(status8));
-  memset(&status1,0,sizeof(control1));
+  memset(&status2,0,sizeof(status2));
+  memset(&status3,0,sizeof(status3));
+  memset(&status4,0,sizeof(status4));
+  memset(&status5,0,sizeof(status5));
+  memset(&status6,0,sizeof(status6));
+  memset(&status7,0,sizeof(status7));
+  memset(&status8,0,sizeof(status8));
+  memset(&status13,0,sizeof(status13));
+  memset(&control1,0,sizeof(control1));
   memset(&param_response,0,sizeof(param_response));
   memset(&demand,0,sizeof(demand));
 }
@@ -283,7 +284,7 @@ void CANTalonSRX::SetDemand(int mode, int demand0)
   msg.len = 8;
   //printCAN(msg);
   CANbus0.write(msg);
-  delay(1);
+  delay(5);
 }
 
 void CANTalonSRX::Set(int mode, double demand0)
@@ -502,11 +503,11 @@ int32_t CANTalonSRX::GetAppliedThrottle()
 int32_t CANTalonSRX::GetCloseLoopErr()
 {
   int32_t raw = 0;
-  raw |= status1.CloseLoopErrH;
+  raw |= status13.CloseLoopErrH;
   raw <<= 16 - 8;
-  raw |= status1.CloseLoopErrM;
+  raw |= status13.CloseLoopErrM;
   raw <<= 8;
-  raw |= status1.CloseLoopErrL;
+  raw |= status13.CloseLoopErrL;
 
   /*Serial.print("H: ");
   Serial.print(status1.CloseLoopErrH, HEX);
@@ -737,6 +738,7 @@ void CANTalonSRX::update(CAN_message_t *inmsg)
     else if (msg.id == (STATUS_13 | deviceNumber))
     {
       //Serial.println("Status 13");
+      memcpy(&status13, msg.buf, msg.len);
     }
     else if (msg.id == (STATUS_14 | deviceNumber))
     {

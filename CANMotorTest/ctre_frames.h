@@ -253,6 +253,18 @@ typedef struct __attribute__((packed)) _TALON_Status_9_MotProfBuffer_100ms_t {
   unsigned ActTraj_PositionL:8;
 } TALON_Status_9_MotProfBuffer_100ms_t ;
 
+typedef struct __attribute__((packed)) _TALON_Status_13_CloseLoop_100ms_t {
+  unsigned CloseLoopErrH:8;
+  unsigned CloseLoopErrM:8;
+  unsigned CloseLoopErrL:8;
+  unsigned IAccumH:8;
+  unsigned IAccumM:8;
+  unsigned IAccumL:8;
+  unsigned ErrDerivH:8;
+  unsigned ErrDerivL:8;
+  
+} TALON_Status_13_CloseLoop_100ms_t ;
+
 typedef struct __attribute__((packed)) _TALON_Param_Request_t {
   unsigned ParamEnumH:8;    //(0) 0 - 7
   unsigned Ordinal:4;       //(1) 0 - 3
