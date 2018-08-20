@@ -139,6 +139,7 @@ void CANTalonSRX::sendMotorEnable(bool motor_enable)
   }
   msg.len = 8;
   CANbus0.write(msg);
+  delay(10);
 }
 
 void CANTalonSRX::GetParamRaw(param_t paramEnum, int32_t value, int8_t subValue, int8_t ordinal)
@@ -284,7 +285,7 @@ void CANTalonSRX::SetDemand(int mode, int demand0)
   msg.len = 8;
   //printCAN(msg);
   CANbus0.write(msg);
-  delay(5);
+  //delay(5);
 }
 
 void CANTalonSRX::Set(int mode, double demand0)
@@ -384,6 +385,11 @@ void CANTalonSRX::SetRevFeedbackSensor(int param)
   byte aBit = PhaseSensor ? 1 : 0;
   SetClrSmallVal(aBit, 1, 7, 7, CONTROL_3);
 }*/
+
+void CANTalonSRX::SetStatusFramePeriod(int32_t arbId, int8_t timeMs)
+{
+  SetParamRaw(eStatusFramePeriod, arbId, timeMs, 0);
+}
 
 void CANTalonSRX::SetPgain(unsigned slotIdx,double gain)
 {
@@ -707,8 +713,8 @@ void CANTalonSRX::update(CAN_message_t *inmsg)
     {
       //Serial.println("Status 6");
       memcpy(&status6, msg.buf, msg.len);
-      status3_period = millis() - status3_timestamp;
-      status3_timestamp = millis();
+      status6_period = millis() - status6_timestamp;
+      status6_timestamp = millis();
     }
     else if (msg.id == (STATUS_7 | deviceNumber))
     {

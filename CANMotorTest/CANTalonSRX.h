@@ -207,6 +207,7 @@ class CANTalonSRX
     void SetDgain(unsigned slotIdx,double gain);
     void SetFgain(unsigned slotIdx,double gain);
     void SetIzone(unsigned slotIdx,int zone);
+    void SetStatusFramePeriod(int32_t arbId, int8_t timeMs);
     void SetSensorPhase(bool val);
     void SetMotorInvert(bool val);
     void SetNeutralMode(byte val);
