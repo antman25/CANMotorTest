@@ -139,7 +139,7 @@ void CANTalonSRX::sendMotorEnable(bool motor_enable)
   }
   msg.len = 8;
   CANbus0.write(msg);
-  delay(10);
+  delay(1);
 }
 
 void CANTalonSRX::GetParamRaw(param_t paramEnum, int32_t value, int8_t subValue, int8_t ordinal)
@@ -211,7 +211,7 @@ void CANTalonSRX::SetParamRaw(unsigned paramEnum, int rawBits, byte subValue, by
   //Serial.println("Set Param Raw:");
   //printCAN(msg);
   CANbus0.write(msg);
-  delay(10);
+  delay(2);
 }
 
 void CANTalonSRX::SetParam(param_t paramEnum, double value)
@@ -285,7 +285,7 @@ void CANTalonSRX::SetDemand(int mode, int demand0)
   msg.len = 8;
   //printCAN(msg);
   CANbus0.write(msg);
-  //delay(5);
+  delay(1);
 }
 
 void CANTalonSRX::Set(int mode, double demand0)
@@ -649,6 +649,21 @@ int16_t CANTalonSRX::GetResetFlags()
   return raw;
 }
 
+int32_t CANTalonSRX::getStatus1Period()
+{
+  return status1_period;
+}
+
+int32_t CANTalonSRX::getStatus2Period()
+{
+  return status2_period;
+}
+
+int32_t CANTalonSRX::getStatus13Period()
+{
+  return status13_period;
+}
+
 void CANTalonSRX::update(CAN_message_t *inmsg)
 {
   
@@ -682,9 +697,9 @@ void CANTalonSRX::update(CAN_message_t *inmsg)
       status2_period = millis() - status2_timestamp;
       status2_timestamp = millis();
       //if (status2.PosDiv8 == 0x01 || status2.VelDiv4 == 0x01)
-      if (status2.VelDiv4 == 0x01)
+      //if (status2.VelDiv4 == 0x01)
       //if (status2.PosDiv8 == 0x01)
-        digitalWrite(LED_BUILTIN, HIGH);
+      //  digitalWrite(LED_BUILTIN, HIGH);
       //printCAN(msg);
     }
     else if (msg.id == (STATUS_3 | deviceNumber))
@@ -745,6 +760,8 @@ void CANTalonSRX::update(CAN_message_t *inmsg)
     {
       //Serial.println("Status 13");
       memcpy(&status13, msg.buf, msg.len);
+      status13_period = millis() - status13_timestamp;
+      status13_timestamp = millis();
     }
     else if (msg.id == (STATUS_14 | deviceNumber))
     {

@@ -215,6 +215,9 @@ class CANTalonSRX
     void SetFeedbackCoeff(float coeff);
     void printParams();
 
+    int32_t getStatus1Period();
+    int32_t getStatus2Period();
+    int32_t getStatus13Period();
     
 private:
     uint8_t sensorPhase = 0;

@@ -35,10 +35,10 @@
 #define TOTAL_MOTORS          6
 
 #define TIMEOUT_MOTOR_CMD     200
-#define TIMEOUT_MOTOR_STATUS  40
+#define TIMEOUT_MOTOR_STATUS  30
 #define TIMEOUT_IMU           50
-#define TIMEOUT_MOTOR_UPDATE  30
-#define TIMEOUT_DEBUG         100
+#define TIMEOUT_MOTOR_UPDATE  50
+#define TIMEOUT_DEBUG         200
 
 #define GEAR_RATIO            2.0
 #define TICKS_PER_REV         1024.0
@@ -52,10 +52,10 @@
 #define VELOCITY_NUM_SAMPLE   16
 
 
-#define STATUS_1_PERIOD       25
+#define STATUS_1_PERIOD       10
 #define STATUS_2_PERIOD       20
-#define STATUS_13_PERIOD      50
-#define CONTROL_3_PERIOD      50
+#define STATUS_13_PERIOD      10
+#define CONTROL_3_PERIOD      200
 
 
 CANTalonSRX motor[TOTAL_MOTORS] = { 
@@ -93,7 +93,7 @@ FlexCAN CANbus0;
 MPU9250 IMU(Wire,0x68);
 
 
-float P_gain = 0.0;//3.0F;
+float P_gain = 0.0f;//3.0F;
 float I_gain = 0.0F;
 float D_gain = 0.0F;
 float F_gain = 2.0f;
@@ -105,6 +105,9 @@ long timerMotorStatus = millis();
 long timerIMU = millis();
 long timerMotorUpdate = millis();
 long timerDebug = millis();
+
+uint32_t timerTestStart = millis();
+uint32_t timerTestEnd = millis();
 
 long seq = 0;
 
@@ -152,6 +155,7 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   right_motor_sp = (float)msg.right_angular_vel;
   valid_sp = true;
   timerMotorTimeout = millis();
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void cbSetPIDFParam ( const titan_base::PIDF &msg)
@@ -174,7 +178,11 @@ void publishDebug()
 {
   char output[120];
 
-  sprintf(output,"Left pos: %i  -- Right pos: %i",(int)motor[getIndex(LEFT_MASTER_ID)].GetSensorPos(),(int)motor[getIndex(RIGHT_MASTER_ID)].GetSensorPos());
+  sprintf(output,"Cycle Time status1: %i status2: %i status13: %i",(int)motor[0].getStatus1Period(),(int)motor[0].getStatus2Period(),(int)motor[0].getStatus13Period());
+  debug.data = output;
+  pubDebug.publish( &debug );
+
+  /*sprintf(output,"Left pos: %i  -- Right pos: %i",(int)motor[getIndex(LEFT_MASTER_ID)].GetSensorPos(),(int)motor[getIndex(RIGHT_MASTER_ID)].GetSensorPos());
   debug.data = output;
   pubDebug.publish( &debug );
   
@@ -186,7 +194,7 @@ void publishDebug()
   float right_sp = right_motor_sp * (1000.0/(2.0 * PI * 10.0));
   sprintf(output,"Left SP: %f rad/s -- %f ticks/100ms -- Right SP: %f rad/s -- %f ticks/100ms",left_motor_sp,left_sp,right_motor_sp,right_sp);
   debug.data = output;
-  pubDebug.publish( &debug );
+  pubDebug.publish( &debug );*/
 }
 
 void publishMotorPIDF()
@@ -202,7 +210,7 @@ void publishMotorStatus()
   
   for (byte i = 0;i < TOTAL_MOTORS;i++)
   {
-    if (i != 0 and i != 3)
+    if (i != 0 && i != 3)
       continue;
     char id[] = "";
     motor_status.header.frame_id = id;
@@ -304,11 +312,9 @@ void checkTimers()
 
   if (millis() - timerMotorUpdate > TIMEOUT_MOTOR_UPDATE)
   {
-    timerMotorUpdate = millis();
     updateMotors();
-    digitalWrite(LED_BUILTIN, LOW);
   }
-
+  
   if (millis() - timerIMU > TIMEOUT_IMU)
   {
     timerIMU = millis();
@@ -396,14 +402,14 @@ void setupMessageRates()
   motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_1,STATUS_1_PERIOD);
   motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_1,STATUS_1_PERIOD);
 
-  motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_2,STATUS_2_PERIOD);
-  motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_2,STATUS_2_PERIOD);
+  motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_2, STATUS_2_PERIOD);
+  motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_2, STATUS_2_PERIOD);
 
   motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_13,STATUS_13_PERIOD);
   motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_13,STATUS_13_PERIOD);
 
-  motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(CONTROL_3,CONTROL_3_PERIOD);
-  motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(CONTROL_3,CONTROL_3_PERIOD);
+  //motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(CONTROL_3,CONTROL_3_PERIOD);
+  //motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(CONTROL_3,CONTROL_3_PERIOD);
 }
 
 void setupMotors()
@@ -465,12 +471,14 @@ void setup(void)
   
   nh.subscribe(subMotorVelocity);
   nh.subscribe(subSetPIDFParam);
+
+  //Serial.begin(115200);
   
 }
 
 void loop(void)
 {
-  
+  nh.spinOnce();
   if(CANbus0.available()) 
   {
     CAN_message_t msg;
@@ -482,7 +490,8 @@ void loop(void)
       motor[i].update(&msg);
     }
   }
-
+  
   checkTimers();
-  nh.spinOnce();
+  
+  
 }
