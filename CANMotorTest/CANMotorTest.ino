@@ -37,7 +37,7 @@
 #define TIMEOUT_MOTOR_CMD     200
 #define TIMEOUT_MOTOR_STATUS  30
 #define TIMEOUT_IMU           50
-#define TIMEOUT_MOTOR_UPDATE  50
+#define TIMEOUT_MOTOR_UPDATE  20
 #define TIMEOUT_DEBUG         200
 
 #define GEAR_RATIO            2.0
@@ -155,7 +155,7 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   right_motor_sp = (float)msg.right_angular_vel;
   valid_sp = true;
   timerMotorTimeout = millis();
-  digitalWrite(LED_BUILTIN, LOW);
+  //digitalWrite(LED_BUILTIN, LOW);
 }
 
 void cbSetPIDFParam ( const titan_base::PIDF &msg)
@@ -313,6 +313,7 @@ void checkTimers()
   if (millis() - timerMotorUpdate > TIMEOUT_MOTOR_UPDATE)
   {
     updateMotors();
+    timerMotorUpdate = millis();
   }
   
   if (millis() - timerIMU > TIMEOUT_IMU)
@@ -399,14 +400,14 @@ void setupVelocityCalc()
 void setupMessageRates()
 {
 
-  motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_1,STATUS_1_PERIOD);
-  motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_1,STATUS_1_PERIOD);
+  //motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_1,STATUS_1_PERIOD);
+  //motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_1,STATUS_1_PERIOD);
 
-  motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_2, STATUS_2_PERIOD);
-  motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_2, STATUS_2_PERIOD);
+  //motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_2, STATUS_2_PERIOD);
+  //motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_2, STATUS_2_PERIOD);
 
-  motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_13,STATUS_13_PERIOD);
-  motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_13,STATUS_13_PERIOD);
+  //motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(STATUS_13,STATUS_13_PERIOD);
+  //motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(STATUS_13,STATUS_13_PERIOD);
 
   //motor[getIndex(LEFT_MASTER_ID)].SetStatusFramePeriod(CONTROL_3,CONTROL_3_PERIOD);
   //motor[getIndex(RIGHT_MASTER_ID)].SetStatusFramePeriod(CONTROL_3,CONTROL_3_PERIOD);
@@ -428,7 +429,7 @@ void setupMotors()
   setupNeutralMode();
   setupThrottleLimit();
   setupVelocityCalc();
-  setupMessageRates();
+  //setupMessageRates();
   resetEncoderCounts();
 
   
@@ -478,6 +479,7 @@ void setup(void)
 
 void loop(void)
 {
+  
   nh.spinOnce();
   if(CANbus0.available()) 
   {
