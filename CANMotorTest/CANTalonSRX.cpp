@@ -285,7 +285,7 @@ void CANTalonSRX::SetDemand(int mode, int demand0)
   msg.len = 8;
   //printCAN(msg);
   CANbus0.write(msg);
-  delay(1);
+  delay(2);
 }
 
 void CANTalonSRX::Set(int mode, double demand0)
