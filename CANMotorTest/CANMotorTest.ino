@@ -3,9 +3,9 @@
 #include <ros.h>
 #include <ros/time.h>
 
-#include <titan_base/Status.h>
-#include <titan_base/MotorVelocity.h>
-#include <titan_base/PIDF.h>
+#include <titan_msgs/Status.h>
+#include <titan_msgs/MotorVelocity.h>
+#include <titan_msgs/PIDF.h>
 
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
@@ -69,8 +69,8 @@ CANTalonSRX motor[TOTAL_MOTORS] = {
   CANTalonSRX(RIGHT_SLAVE_2_ID)
 };
 
-titan_base::Status motor_status;
-titan_base::MotorVelocity vel_cmd;
+titan_msgs::Status motor_status;
+titan_msgs::MotorVelocity vel_cmd;
 
 sensor_msgs::Imu imuRawMsg;
 sensor_msgs::MagneticField magMsg;
@@ -151,7 +151,7 @@ void updateMotors()
     pubDebug.publish( &debug );*/
 }
 
-void cbMotorVelocity( const titan_base::MotorVelocity &msg)
+void cbMotorVelocity( const titan_msgs::MotorVelocity &msg)
 {
   //digitalWrite(LED_BUILTIN, HIGH);
   left_motor_sp = (float)msg.left_angular_vel;
@@ -161,7 +161,7 @@ void cbMotorVelocity( const titan_base::MotorVelocity &msg)
   //digitalWrite(LED_BUILTIN, LOW);
 }
 
-void cbSetPIDFParam ( const titan_base::PIDF &msg)
+void cbSetPIDFParam ( const titan_msgs::PIDF &msg)
 {
   P_gain = msg.P_Gain;
   I_gain = msg.I_Gain;
@@ -187,8 +187,8 @@ void cbSetPump ( const std_msgs::Float32 &msg)
 }
 
 
-ros::Subscriber<titan_base::MotorVelocity> subMotorVelocity("motor_velocity", cbMotorVelocity);
-ros::Subscriber<titan_base::PIDF> subSetPIDFParam("set_pidf_param", cbSetPIDFParam);
+ros::Subscriber<titan_msgs::MotorVelocity> subMotorVelocity("motor_velocity", cbMotorVelocity);
+ros::Subscriber<titan_msgs::PIDF> subSetPIDFParam("set_pidf_param", cbSetPIDFParam);
 ros::Subscriber<std_msgs::Float32> subSetPump("set_pump", cbSetPump);
 
 void publishDebug()
